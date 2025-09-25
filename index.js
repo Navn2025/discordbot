@@ -1,4 +1,10 @@
 require('dotenv').config();
+const express=require('express');
+const app=express();
+const PORT=3000;
+
+app.get('/', (req, res) => res.send('Bot is running!'));
+app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 const {GoogleGenAI}=require('@google/genai');
 const {Client, GatewayIntentBits}=require('discord.js');
 const memory=new Map();
