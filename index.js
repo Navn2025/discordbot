@@ -100,8 +100,8 @@ client.on("messageCreate", async (message) =>
 
     } catch (err)
     {
-        console.error("❌ Error generating content:", err);
-        await message.reply("⚠️ Sorry, I couldn't generate that content.");
+        console.error(" Error generating content:", err);
+        await message.reply(" Sorry, I couldn't generate that content.");
     }
 });
 
