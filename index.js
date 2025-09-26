@@ -8,7 +8,6 @@ const {Client, GatewayIntentBits}=require('discord.js');
 
 const memory=new Map();
 const warnings=new Map();
-const recentMessages=new Map();
 
 
 app.get('/', (req, res) => res.send('Bot is running!'));
@@ -31,9 +30,9 @@ const ai=new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY
 });
 
-async function generateContent(channelId, userPrompt)
+async function generateContent(userId, userPrompt)
 {
-    const history=memory.get(channelId)||[];
+    const history=memory.get(userId)||[];
     history.push({role: "user", text: userPrompt});
 
     const contents=[
@@ -50,7 +49,7 @@ async function generateContent(channelId, userPrompt)
     });
 
     history.push({role: "assistant", text: response.text});
-    memory.set(channelId, history.slice(-10)); // keep last 10 messages
+    memory.set(userId, history.slice(-10)); // keep last 10 messages
     return response.text;
 }
 
@@ -73,6 +72,7 @@ async function checkContent(userPrompt)
 client.on("messageCreate", async (message) =>
 {
     if (message.author.bot) return;
+    const userId=message.author.id;
 
 
     try
@@ -81,7 +81,6 @@ client.on("messageCreate", async (message) =>
 
         if (isValid===0)
         {
-            const userId=message.author.id;
             const userWarnings=warnings.get(userId)||0;
 
             if (userWarnings===0)
@@ -106,7 +105,7 @@ client.on("messageCreate", async (message) =>
         }
 
         await message.channel.sendTyping();
-        const content=await generateContent(message.channel.id, message.content);
+        const content=await generateContent(message.author.id, message.content);
         await message.channel.send(content);
 
     } catch (err)
