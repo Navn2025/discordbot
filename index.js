@@ -9,7 +9,7 @@ const {Client, GatewayIntentBits}=require('discord.js');
 const memory=new Map();
 const warnings=new Map();
 const recentMessages=new Map();
-const COOLDOWN=30*1000;
+
 
 app.get('/', (req, res) => res.send('Bot is running!'));
 app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
@@ -74,9 +74,6 @@ client.on("messageCreate", async (message) =>
 {
     if (message.author.bot) return;
 
-    const lastTime=recentMessages.get(message.author.id)||0;
-    if (Date.now()-lastTime<COOLDOWN) return; // skip if within cooldown
-    recentMessages.set(message.author.id, Date.now());
 
     try
     {
