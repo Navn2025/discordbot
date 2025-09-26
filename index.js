@@ -1,14 +1,13 @@
 require('dotenv').config();
 const express=require('express');
-const app=express();
-const PORT=3000;
-
 const {GoogleGenAI}=require('@google/genai');
 const {Client, GatewayIntentBits}=require('discord.js');
 
+const app=express();
+const PORT=3000;
+
 const memory=new Map();
 const warnings=new Map();
-
 
 app.get('/', (req, res) => res.send('Bot is running!'));
 app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
@@ -30,13 +29,25 @@ const ai=new GoogleGenAI({
     apiKey: process.env.GOOGLE_API_KEY
 });
 
-async function generateContent(userId, userPrompt)
+async function generateContent(message, userPrompt)
 {
+    const user=message.author;
+    const userId=user.id;
+    const userMention=`<@${userId}>`;
+
     const history=memory.get(userId)||[];
     history.push({role: "user", text: userPrompt});
 
     const contents=[
-        {type: "system", text: "You are a helpful and creative AI assistant in a Discord server. Keep conversations polite and friendly."},
+        {
+            type: "system",
+            text: `You are a friendly and helpful AI assistant in Discord.
+Always start your response by mentioning the user: ${userMention}.
+Here is the user's info:
+- Username: ${user.username}
+- Discriminator: ${user.discriminator}
+- User ID: ${user.id}`
+        },
         ...history.map(msg => ({
             type: msg.role==="user"? "user":"assistant",
             text: msg.text
@@ -49,7 +60,8 @@ async function generateContent(userId, userPrompt)
     });
 
     history.push({role: "assistant", text: response.text});
-    memory.set(userId, history.slice(-10)); // keep last 10 messages
+    memory.set(userId, history.slice(-10));
+
     return response.text;
 }
 
@@ -73,7 +85,7 @@ client.on("messageCreate", async (message) =>
 {
     if (message.author.bot) return;
     const userId=message.author.id;
-
+    const userMention=`<@${userId}>`;
 
     try
     {
@@ -98,14 +110,15 @@ client.on("messageCreate", async (message) =>
                 } catch (err)
                 {
                     console.error("Failed to kick member:", err);
-                    await message.reply("❌ I tried to kick the user but couldn't due to permissions.");
+                    await message.reply("❌ I couldn't kick the user due to permissions.");
                 }
             }
             return;
         }
 
         await message.channel.sendTyping();
-        const content=await generateContent(message.author.id, message.content);
+        const content=await generateContent(message, message.content);
+
         await message.channel.send(content);
 
     } catch (err)
